@@ -1,6 +1,6 @@
 from functools import wraps
-
 from flask import json
+import logging
 
 
 def add_tag(tag):
@@ -12,13 +12,9 @@ def add_tag(tag):
     return inner
 
 
-@add_tag('h1')
-def write_something():
-    return 'something'
-
-
-result = write_something()
-assert result == '<h1>something</h1>'
+# @add_tag('h1')
+# def write_something():
+#     return 'something'
 
 
 def validate_json(*keys):
@@ -36,10 +32,27 @@ def validate_json(*keys):
     return inner
 
 
-@validate_json('first_name', 'last_name')
-def process_json(json_data):
-    return len(json_data)
+# @validate_json('first_name', 'last_name')
+# def process_json(json_data):
+#     return len(json_data)
 
 
-result = process_json('{"first_name": "James", "last_name": "Bond"}')
-assert result == 44
+def log_this(logger, level=logging.INFO, format=''):
+    def inner(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            logging.basicConfig(level=level)
+            arguments = [str(x) for x in args] + [str(k) + '=' + str(v) for k, v in kwargs.items()]
+            rv = f(*args, **kwargs)
+            logger.info(format, f.__name__, tuple(arguments), rv)
+        return wrapper
+    return inner
+
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+
+# @log_this(logger, level=logging.WARNING, format='%s: %s -> %s')
+# def my_func(a, b, c=None, d=False):
+#     return 'Wow!'
